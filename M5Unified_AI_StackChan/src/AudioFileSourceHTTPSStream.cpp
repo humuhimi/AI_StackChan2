@@ -21,7 +21,7 @@
 #if defined(ESP32) || defined(ESP8266)
 
 #include "AudioFileSourceHTTPSStream.h"
-//#include "rootCACertificate.h"
+// #include "rootCACertificate.h"
 
 AudioFileSourceHTTPSStream::AudioFileSourceHTTPSStream()
 {
@@ -30,7 +30,7 @@ AudioFileSourceHTTPSStream::AudioFileSourceHTTPSStream()
   saveURL[0] = 0;
 }
 
-AudioFileSourceHTTPSStream::AudioFileSourceHTTPSStream(const char *url, const char* root_ca)
+AudioFileSourceHTTPSStream::AudioFileSourceHTTPSStream(const char *url, const char *root_ca)
 {
   saveURL[0] = 0;
   reconnectTries = 0;
@@ -48,14 +48,15 @@ bool AudioFileSourceHTTPSStream::open(const char *url)
   http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 #endif
   int code = http.GET();
-  if (code != HTTP_CODE_OK) {
+  if (code != HTTP_CODE_OK)
+  {
     http.end();
     cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return false;
   }
   size = http.getSize();
   strncpy(saveURL, url, sizeof(saveURL));
-  saveURL[sizeof(saveURL)-1] = 0;
+  saveURL[sizeof(saveURL) - 1] = 0;
   return true;
 }
 
@@ -66,7 +67,8 @@ AudioFileSourceHTTPSStream::~AudioFileSourceHTTPSStream()
 
 uint32_t AudioFileSourceHTTPSStream::read(void *data, uint32_t len)
 {
-  if (data==NULL) {
+  if (data == NULL)
+  {
     audioLogger->printf_P(PSTR("ERROR! AudioFileSourceHTTPSStream::read passed NULL data\n"));
     return 0;
   }
@@ -75,57 +77,69 @@ uint32_t AudioFileSourceHTTPSStream::read(void *data, uint32_t len)
 
 uint32_t AudioFileSourceHTTPSStream::readNonBlock(void *data, uint32_t len)
 {
-  if (data==NULL) {
+  if (data == NULL)
+  {
     audioLogger->printf_P(PSTR("ERROR! AudioFileSourceHTTPSStream::readNonBlock passed NULL data\n"));
     return 0;
   }
   return readInternal(data, len, true);
-//  return readInternal(data, len, false);
+  //  return readInternal(data, len, false);
 }
 
 uint32_t AudioFileSourceHTTPSStream::readInternal(void *data, uint32_t len, bool nonBlock)
 {
 retry:
-  if (!http.connected()) {
+  if (!http.connected())
+  {
     cb.st(STATUS_DISCONNECTED, PSTR("Stream disconnected"));
     http.end();
-    for (int i = 0; i < reconnectTries; i++) {
+    for (int i = 0; i < reconnectTries; i++)
+    {
       char buff[64];
       sprintf_P(buff, PSTR("Attempting to reconnect, try %d"), i);
       cb.st(STATUS_RECONNECTING, buff);
       delay(reconnectDelayMs);
-      if (open(saveURL)) {
+      if (open(saveURL))
+      {
         cb.st(STATUS_RECONNECTED, PSTR("Stream reconnected"));
         break;
       }
     }
-    if (!http.connected()) {
+    if (!http.connected())
+    {
       cb.st(STATUS_DISCONNECTED, PSTR("Unable to reconnect"));
       return 0;
     }
   }
-  if ((size > 0) && (pos >= size)) return 0;
+  if ((size > 0) && (pos >= size))
+    return 0;
 
   WiFiClient *stream = http.getStreamPtr();
 
   // Can't read past EOF...
-  if ( (size > 0) && (len > (uint32_t)(pos - size)) ) len = pos - size;
+  if ((size > 0) && (len > (uint32_t)(pos - size)))
+    len = pos - size;
 
-  if (!nonBlock) {
+  if (!nonBlock)
+  {
     int start = millis();
-    while ((stream->available() < (int)len) && (millis() - start < 500)) yield();
+    while ((stream->available() < (int)len) && (millis() - start < 500))
+      yield();
   }
 
   size_t avail = stream->available();
-  if (!nonBlock && !avail) {
+  if (!nonBlock && !avail)
+  {
     cb.st(STATUS_NODATA, PSTR("No stream data available"));
     http.end();
     goto retry;
   }
-  if (avail == 0) return 0;
-  if (avail < len) len = avail;
+  if (avail == 0)
+    return 0;
+  if (avail < len)
+    len = avail;
 
-  int read = stream->read(reinterpret_cast<uint8_t*>(data), len);
+  int read = stream->read(reinterpret_cast<uint8_t *>(data), len);
   pos += read;
   return read;
 }
@@ -133,8 +147,8 @@ retry:
 bool AudioFileSourceHTTPSStream::seek(int32_t pos, int dir)
 {
   audioLogger->printf_P(PSTR("ERROR! AudioFileSourceHTTPSStream::seek not implemented!"));
-  (void) pos;
-  (void) dir;
+  (void)pos;
+  (void)dir;
   return false;
 }
 

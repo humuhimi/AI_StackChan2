@@ -1,17 +1,20 @@
 #include <M5Unified.h>
 #include "Audio.h"
 
-Audio::Audio() {
+Audio::Audio()
+{
   wavData = (typeof(wavData))heap_caps_malloc(record_size * sizeof(int16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-//  wavData = (typeof(wavData))heap_caps_malloc(record_size * sizeof(int16_t),  MALLOC_CAP_8BIT);
-  memset(wavData, 0 , record_size * sizeof(int16_t));
+  //  wavData = (typeof(wavData))heap_caps_malloc(record_size * sizeof(int16_t),  MALLOC_CAP_8BIT);
+  memset(wavData, 0, record_size * sizeof(int16_t));
 }
 
-Audio::~Audio() {
+Audio::~Audio()
+{
   delete wavData;
 }
 
-void Audio::CreateWavHeader(byte* header, int waveDataSize){
+void Audio::CreateWavHeader(byte *header, int waveDataSize)
+{
   header[0] = 'R';
   header[1] = 'I';
   header[2] = 'F';
@@ -29,25 +32,25 @@ void Audio::CreateWavHeader(byte* header, int waveDataSize){
   header[13] = 'm';
   header[14] = 't';
   header[15] = ' ';
-  header[16] = 0x10;  // linear PCM
+  header[16] = 0x10; // linear PCM
   header[17] = 0x00;
   header[18] = 0x00;
   header[19] = 0x00;
-  header[20] = 0x01;  // linear PCM
+  header[20] = 0x01; // linear PCM
   header[21] = 0x00;
-  header[22] = 0x01;  // monoral
+  header[22] = 0x01; // monoral
   header[23] = 0x00;
-  header[24] = 0x80;  // sampling rate 16000
+  header[24] = 0x80; // sampling rate 16000
   header[25] = 0x3E;
   header[26] = 0x00;
   header[27] = 0x00;
-  header[28] = 0x00;  // Byte/sec = 16000x2x1 = 32000
+  header[28] = 0x00; // Byte/sec = 16000x2x1 = 32000
   header[29] = 0x7D;
   header[30] = 0x00;
   header[31] = 0x00;
-  header[32] = 0x02;  // 16bit monoral
+  header[32] = 0x02; // 16bit monoral
   header[33] = 0x00;
-  header[34] = 0x10;  // 16bit
+  header[34] = 0x10; // 16bit
   header[35] = 0x00;
   header[36] = 'd';
   header[37] = 'a';
@@ -59,11 +62,13 @@ void Audio::CreateWavHeader(byte* header, int waveDataSize){
   header[43] = (byte)((waveDataSize >> 24) & 0xFF);
 }
 
-void Audio::Record() {
+void Audio::Record()
+{
   CreateWavHeader(paddedHeader, wavDataSize);
   M5.Mic.begin();
   int rec_record_idx;
-  for (rec_record_idx = 0; rec_record_idx < record_number; rec_record_idx++) {
+  for (rec_record_idx = 0; rec_record_idx < record_number; rec_record_idx++)
+  {
     auto data = &wavData[rec_record_idx * record_length];
     M5.Mic.record(data, record_length, record_samplerate);
   }

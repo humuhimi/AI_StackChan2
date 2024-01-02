@@ -1,36 +1,44 @@
 #include <ArduinoJson.h>
 #include "Whisper.h"
 
-namespace {
-constexpr char* API_HOST = "api.openai.com";
-constexpr int API_PORT = 443;
-constexpr char* API_PATH = "/v1/audio/transcriptions";
-}  // namespace
+namespace
+{
+  constexpr char *API_HOST = "api.openai.com";
+  constexpr int API_PORT = 443;
+  constexpr char *API_PATH = "/v1/audio/transcriptions";
+} // namespace
 
-Whisper::Whisper(const char* root_ca, const char* api_key) : client(), key(api_key) {
+Whisper::Whisper(const char *root_ca, const char *api_key) : client(), key(api_key)
+{
   client.setCACert(root_ca);
-  client.setTimeout(10000); 
-  if (!client.connect(API_HOST, API_PORT)) {
+  client.setTimeout(10000);
+  if (!client.connect(API_HOST, API_PORT))
+  {
     Serial.println("Connection failed!");
   }
 }
 
-Whisper::~Whisper() {
+Whisper::~Whisper()
+{
   client.stop();
 }
 
-String Whisper::Transcribe(AudioWhisper* audio) {
+String Whisper::Transcribe(AudioWhisper *audio)
+{
   char boundary[64] = "------------------------";
-  for (auto i = 0; i < 2; ++i) {
+  for (auto i = 0; i < 2; ++i)
+  {
     ltoa(random(0x7fffffff), boundary + strlen(boundary), 16);
   }
   const String header = "--" + String(boundary) + "\r\n"
-    "Content-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n"
-    "--" + String(boundary) + "\r\n"
-    "Content-Disposition: form-data; name=\"language\"\r\n\r\nja\r\n"
-    "--" + String(boundary) + "\r\n"
-    "Content-Disposition: form-data; name=\"file\"; filename=\"speak.wav\"\r\n"
-    "Content-Type: application/octet-stream\r\n\r\n";
+                                                  "Content-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n"
+                                                  "--" +
+                        String(boundary) + "\r\n"
+                                           "Content-Disposition: form-data; name=\"language\"\r\n\r\nja\r\n"
+                                           "--" +
+                        String(boundary) + "\r\n"
+                                           "Content-Disposition: form-data; name=\"file\"; filename=\"speak.wav\"\r\n"
+                                           "Content-Type: application/octet-stream\r\n\r\n";
   const String footer = "\r\n--" + String(boundary) + "--\r\n";
 
   // header
@@ -46,7 +54,8 @@ String Whisper::Transcribe(AudioWhisper* audio) {
 
   auto ptr = audio->GetBuffer();
   auto remainings = audio->GetSize();
-  while (remainings > 0) {
+  while (remainings > 0)
+  {
     auto sz = (remainings > 512) ? 512 : remainings;
     client.write(ptr, sz);
     client.flush();
@@ -61,8 +70,10 @@ String Whisper::Transcribe(AudioWhisper* audio) {
 
   // wait response
   const auto now = ::millis();
-  while (client.available() == 0) {
-    if (::millis() - now > 10000) {
+  while (client.available() == 0)
+  {
+    if (::millis() - now > 10000)
+    {
       Serial.println(">>> Client Timeout !");
       return "";
     }
@@ -70,11 +81,15 @@ String Whisper::Transcribe(AudioWhisper* audio) {
 
   bool isBody = false;
   String body = "";
-  while(client.available()){
+  while (client.available())
+  {
     const auto line = client.readStringUntil('\r');
-    if (isBody) {
+    if (isBody)
+    {
       body += line;
-    } else if (line.equals("\n")) {
+    }
+    else if (line.equals("\n"))
+    {
       isBody = true;
     }
   }

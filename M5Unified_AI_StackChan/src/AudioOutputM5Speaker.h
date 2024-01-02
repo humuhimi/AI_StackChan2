@@ -1,65 +1,65 @@
 #include <AudioOutput.h>
 
 /// set M5Speaker virtual channel (0-7)
-//static constexpr uint8_t m5spk_virtual_channel = 0;
+// static constexpr uint8_t m5spk_virtual_channel = 0;
 
 class AudioOutputM5Speaker : public AudioOutput
 {
-  public:
-    AudioOutputM5Speaker(m5::Speaker_Class* m5sound, uint8_t virtual_sound_channel = 0)
+public:
+  AudioOutputM5Speaker(m5::Speaker_Class *m5sound, uint8_t virtual_sound_channel = 0)
+  {
+    _m5sound = m5sound;
+    _virtual_ch = virtual_sound_channel;
+  }
+  virtual ~AudioOutputM5Speaker(void){};
+  virtual bool begin(void) override { return true; }
+  virtual bool ConsumeSample(int16_t sample[2]) override
+  {
+    if (_tri_buffer_index < tri_buf_size)
     {
-      _m5sound = m5sound;
-      _virtual_ch = virtual_sound_channel;
-    }
-    virtual ~AudioOutputM5Speaker(void) {};
-    virtual bool begin(void) override { return true; }
-    virtual bool ConsumeSample(int16_t sample[2]) override
-    {
-      if (_tri_buffer_index < tri_buf_size)
-      {
-        _tri_buffer[_tri_index][_tri_buffer_index  ] = sample[0];
-        _tri_buffer[_tri_index][_tri_buffer_index+1] = sample[0];
-        _tri_buffer_index += 2;
+      _tri_buffer[_tri_index][_tri_buffer_index] = sample[0];
+      _tri_buffer[_tri_index][_tri_buffer_index + 1] = sample[0];
+      _tri_buffer_index += 2;
 
-        return true;
-      }
-
-      flush();
-      return false;
-    }
-    virtual void flush(void) override
-    {
-      if (_tri_buffer_index)
-      {
-        _m5sound->playRaw(_tri_buffer[_tri_index], _tri_buffer_index, hertz, true, 1, _virtual_ch);
-        _tri_index = _tri_index < 2 ? _tri_index + 1 : 0;
-        _tri_buffer_index = 0;
-        ++_update_count;
-      }
-    }
-    virtual bool stop(void) override
-    {
-      flush();
-      _m5sound->stop(_virtual_ch);
-      for (size_t i = 0; i < 3; ++i)
-      {
-        memset(_tri_buffer[i], 0, tri_buf_size * sizeof(int16_t));
-      }
-      ++_update_count;
       return true;
     }
 
-    const int16_t* getBuffer(void) const { return _tri_buffer[(_tri_index + 2) % 3]; }
-    const uint32_t getUpdateCount(void) const { return _update_count; }
+    flush();
+    return false;
+  }
+  virtual void flush(void) override
+  {
+    if (_tri_buffer_index)
+    {
+      _m5sound->playRaw(_tri_buffer[_tri_index], _tri_buffer_index, hertz, true, 1, _virtual_ch);
+      _tri_index = _tri_index < 2 ? _tri_index + 1 : 0;
+      _tri_buffer_index = 0;
+      ++_update_count;
+    }
+  }
+  virtual bool stop(void) override
+  {
+    flush();
+    _m5sound->stop(_virtual_ch);
+    for (size_t i = 0; i < 3; ++i)
+    {
+      memset(_tri_buffer[i], 0, tri_buf_size * sizeof(int16_t));
+    }
+    ++_update_count;
+    return true;
+  }
 
-  protected:
-    m5::Speaker_Class* _m5sound;
-    uint8_t _virtual_ch;
-    static constexpr size_t tri_buf_size = 640;
-    int16_t _tri_buffer[3][tri_buf_size];
-    size_t _tri_buffer_index = 0;
-    size_t _tri_index = 0;
-    size_t _update_count = 0;
+  const int16_t *getBuffer(void) const { return _tri_buffer[(_tri_index + 2) % 3]; }
+  const uint32_t getUpdateCount(void) const { return _update_count; }
+
+protected:
+  m5::Speaker_Class *_m5sound;
+  uint8_t _virtual_ch;
+  static constexpr size_t tri_buf_size = 640;
+  int16_t _tri_buffer[3][tri_buf_size];
+  size_t _tri_buffer_index = 0;
+  size_t _tri_index = 0;
+  size_t _update_count = 0;
 };
 
 #define FFT_SIZE 256
@@ -78,16 +78,16 @@ public:
 #ifndef M_PI
 #define M_PI 3.141592653
 #endif
-    _ie = logf( (float)FFT_SIZE ) / log(2.0) + 0.5;
+    _ie = logf((float)FFT_SIZE) / log(2.0) + 0.5;
     static constexpr float omega = 2.0f * M_PI / FFT_SIZE;
     static constexpr int s4 = FFT_SIZE / 4;
     static constexpr int s2 = FFT_SIZE / 2;
-    for ( int i = 1 ; i < s4 ; ++i)
+    for (int i = 1; i < s4; ++i)
     {
-    float f = cosf(omega * i);
+      float f = cosf(omega * i);
       _wi[s4 + i] = f;
       _wi[s4 - i] = f;
-      _wr[     i] = f;
+      _wr[i] = f;
       _wr[s2 - i] = -f;
     }
     _wi[s4] = _wr[0] = 1;
@@ -95,23 +95,23 @@ public:
     size_t je = 1;
     _br[0] = 0;
     _br[1] = FFT_SIZE / 2;
-    for ( size_t i = 0 ; i < _ie - 1 ; ++i )
+    for (size_t i = 0; i < _ie - 1; ++i)
     {
-      _br[ je << 1 ] = _br[ je ] >> 1;
+      _br[je << 1] = _br[je] >> 1;
       je = je << 1;
-      for ( size_t j = 1 ; j < je ; ++j )
+      for (size_t j = 1; j < je; ++j)
       {
         _br[je + j] = _br[je] + _br[j];
       }
     }
   }
 
-  void exec(const int16_t* in)
+  void exec(const int16_t *in)
   {
     memset(_fi, 0, sizeof(_fi));
-    for ( size_t j = 0 ; j < FFT_SIZE / 2 ; ++j )
+    for (size_t j = 0; j < FFT_SIZE / 2; ++j)
     {
-      float basej = 0.25 * (1.0-_wr[j]);
+      float basej = 0.25 * (1.0 - _wr[j]);
       size_t r = FFT_SIZE - j - 1;
 
       /// perform han window and stereo to mono convert.
@@ -141,13 +141,13 @@ public:
           _fi[m] = _fi[l] - Wxmi;
           _fr[l] += Wxmr;
           _fi[l] += Wxmi;
-        } while ( ++k < ke) ;
-      } while ( ++j < je );
-    } while ( ++i < _ie );
+        } while (++k < ke);
+      } while (++j < je);
+    } while (++i < _ie);
   }
 
   uint32_t get(size_t index)
   {
-    return (index < FFT_SIZE / 2) ? (uint32_t)sqrtf(_fr[ index ] * _fr[ index ] + _fi[ index ] * _fi[ index ]) : 0u;
+    return (index < FFT_SIZE / 2) ? (uint32_t)sqrtf(_fr[index] * _fr[index] + _fi[index] * _fi[index]) : 0u;
   }
 };

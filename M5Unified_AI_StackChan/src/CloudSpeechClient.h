@@ -3,21 +3,22 @@
 #include <WiFiClientSecure.h>
 #include "Audio.h"
 
-enum Authentication {
+enum Authentication
+{
   USE_ACCESSTOKEN,
   USE_APIKEY
 };
 
-class CloudSpeechClient {
+class CloudSpeechClient
+{
   WiFiClientSecure client;
-  void PrintHttpBody2(Audio* audio);
+  void PrintHttpBody2(Audio *audio);
   String key;
-//  Authentication authentication;
+  //  Authentication authentication;
 public:
-  CloudSpeechClient(const char* root_ca, const char* api_key);
+  CloudSpeechClient(const char *root_ca, const char *api_key);
   ~CloudSpeechClient();
-  String Transcribe(Audio* audio);
+  String Transcribe(Audio *audio);
 };
 
 #endif // _CLOUDSPEECHCLIENT_H
-

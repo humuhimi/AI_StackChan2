@@ -3,13 +3,15 @@
 
 #include "AudioWhisper.h"
 
-class AudioWhisper {
-  byte* record_buffer;
- public:
+class AudioWhisper
+{
+  byte *record_buffer;
+
+public:
   AudioWhisper();
   ~AudioWhisper();
 
-  const byte* GetBuffer() const { return record_buffer; }
+  const byte *GetBuffer() const { return record_buffer; }
   size_t GetSize() const;
 
   void Record();
